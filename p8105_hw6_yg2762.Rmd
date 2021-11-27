@@ -69,3 +69,92 @@ cv_df_plot
 ```
 
 
+## Problem 2
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+```{r}
+lm(tmax ~ tmin, data = weather_df)
+```
+
+```{r}
+boot_sample = function(df) {
+  sample_frac(df, replace = TRUE)
+}
+```
+
+```{r}
+boot_sample(weather_df) %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point(alpha = .5) +
+  stat_smooth(method = "lm")
+```
+
+```{r}
+boot_straps = 
+  tibble(
+    strap_number = 1:5000,
+    strap_sample = rerun(5000, boot_sample(weather_df))
+  )
+```
+
+```{r}
+r_results = boot_straps %>% 
+  mutate(
+    models = map(strap_sample, ~lm(tmax ~ tmin, data = .x)),
+    r_results = map(models, broom::glance)) %>% 
+  select(-strap_sample, -models) %>% 
+  unnest(r_results)
+``` 
+
+```{r}
+r_results %>% 
+  summarise (
+    ci_lower = quantile(r.squared, 0.025), 
+    ci_upper = quantile(r.squared, 0.975))
+```
+
+
+```{r}
+beta_results = boot_straps %>% 
+  mutate(
+    models = map(strap_sample, ~lm(tmax ~ tmin, data = .x) ),
+    beta_results = map(models, broom::tidy)) %>% 
+  select(-strap_sample, -models) %>% 
+  unnest(beta_results) 
+```
+
+```{r}
+b = beta_results %>% 
+  select(strap_number,term,estimate) %>% 
+  pivot_wider(
+    names_from = term,
+    values_from = estimate
+  ) %>% 
+  mutate(log = log(`(Intercept)`* `tmin`))
+```
+
+```{r}
+c= merge(b, beta_results) %>% 
+  summarize(
+    ci_lower = quantile(log, 0.025), 
+    ci_upper = quantile(log, 0.975))
+```
+
+
+
+
+
+
+
