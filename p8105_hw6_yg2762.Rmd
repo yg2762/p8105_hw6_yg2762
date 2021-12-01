@@ -68,6 +68,7 @@ cv_df_plot = cv_df %>%
 cv_df_plot
 ```
 
+According to the cross validation results, `model_3`is the best model for the data compared to the other two. 
 
 ## Problem 2
 ```{r}
@@ -85,15 +86,12 @@ weather_df =
 ```
 
 ```{r}
-lm(tmax ~ tmin, data = weather_df)
-```
-
-```{r}
 boot_sample = function(df) {
   sample_frac(df, replace = TRUE)
 }
 ```
 
+### Check for the `boot_sample`
 ```{r}
 boot_sample(weather_df) %>% 
   ggplot(aes(x = tmin, y = tmax)) + 
@@ -101,6 +99,7 @@ boot_sample(weather_df) %>%
   stat_smooth(method = "lm")
 ```
 
+### Run bootstrap
 ```{r}
 boot_straps = 
   tibble(
@@ -120,9 +119,16 @@ r_results = boot_straps %>%
 
 ```{r}
 r_results %>% 
+  ggplot(aes(x = r.squared)) + geom_density()
+```
+The distribution of R-squared is relatively normal with a little tail to lower values, indicating there might have large outliers in the boot strap sample.
+
+```{r}
+r_results %>% 
   summarise (
     ci_lower = quantile(r.squared, 0.025), 
-    ci_upper = quantile(r.squared, 0.975))
+    ci_upper = quantile(r.squared, 0.975)) %>% 
+  knitr::kable()
 ```
 
 
@@ -136,23 +142,27 @@ beta_results = boot_straps %>%
 ```
 
 ```{r}
-b = beta_results %>% 
+log_beta = beta_results %>% 
   select(strap_number,term,estimate) %>% 
   pivot_wider(
     names_from = term,
     values_from = estimate
   ) %>% 
   mutate(log = log(`(Intercept)`* `tmin`))
+
+ggplot(log_beta,aes(x = log)) + geom_density()
 ```
+
+The distribution of log(beta_0 *beta) is normal.
+
 
 ```{r}
-c= merge(b, beta_results) %>% 
-  summarize(
-    ci_lower = quantile(log, 0.025), 
-    ci_upper = quantile(log, 0.975))
+log_beta %>% 
+  summarise(
+     ci_lower = quantile(log, 0.025), 
+    ci_upper = quantile(log, 0.975)) %>% 
+  knitr::kable()
 ```
-
-
 
 
 
