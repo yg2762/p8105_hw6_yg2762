@@ -11,14 +11,23 @@ library(mgcv)
 ```
 
 ## Problem 2
+
 ```{r}
-birthweight = read_csv ("./birthweight.csv") %>% 
-  mutate(babysex = recode(babysex, `1` = "male", `2` = "female")) %>% 
-  mutate(frace = recode (frace, `1`="White",`2` = "Black", `3` = "Asian", 
-                                      `4` ="Putero Rican",`8`="other", `9` = "Unknown")) %>% 
-  mutate(mrace = recode (mrace, `1`="White",`2` = "Black", `3` = "Asian", 
-                                      `4` ="Putero Rican",`8`="other"))
+birthweight = 
+  read_csv("./birthweight.csv") %>% 
+  janitor::clean_names() %>%
+  mutate(
+    babysex = as.factor(babysex),
+    babysex = fct_recode(babysex, "male" = "1", "female" = "2"),
+    frace = as.factor(frace),
+    frace = fct_recode(frace, "white" = "1", "black" = "2", "asian" = "3", 
+                       "puerto rican" = "4", "other" = "8"),
+    malform = as.logical(malform),
+    mrace = as.factor(mrace),
+    mrace = fct_recode(mrace, "white" = "1", "black" = "2", "asian" = "3", 
+                       "puerto rican" = "4")) 
 ```
+
 
 ```{r}
 model_1 = lm(bwt ~ delwt, data = birthweight)
@@ -121,6 +130,7 @@ r_results = boot_straps %>%
 r_results %>% 
   ggplot(aes(x = r.squared)) + geom_density()
 ```
+
 The distribution of R-squared is relatively normal with a little tail to lower values, indicating there might have large outliers in the boot strap sample.
 
 ```{r}
