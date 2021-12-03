@@ -22,10 +22,11 @@ birthweight =
     frace = as.factor(frace),
     frace = fct_recode(frace, "white" = "1", "black" = "2", "asian" = "3", 
                        "puerto rican" = "4", "other" = "8"),
-    malform = as.logical(malform),
+    malform = as.factor(malform),
+    malform = fct_recode(malform, "absent" = "0", "present" = "1"),
     mrace = as.factor(mrace),
     mrace = fct_recode(mrace, "white" = "1", "black" = "2", "asian" = "3", 
-                       "puerto rican" = "4")) 
+                                             "puerto rican" = "4")) 
 ```
 
 
@@ -55,13 +56,13 @@ cv_df =
   mutate(
     model_1 = map(train, ~lm(bwt ~ delwt, data = .x)),
     model_2 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
-    model_3 = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + 
-                                   bhead*blength*babysex, data = .x))) %>% 
+    model_3 = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead*blength*babysex, data = .x))) %>% 
   mutate(
    rmse_model_1 = map2_dbl(model_1, test, ~rmse(model = .x, data = .y)),
    rmse_model_2 = map2_dbl(model_2, test, ~rmse(model = .x, data = .y)),
    rmse_model_3 = map2_dbl(model_3, test, ~rmse(model = .x, data = .y)))
 ```
+
 
 ```{r}
 cv_df_plot = cv_df %>% 
@@ -141,7 +142,6 @@ r_results %>%
   knitr::kable()
 ```
 
-
 ```{r}
 beta_results = boot_straps %>% 
   mutate(
@@ -164,7 +164,6 @@ ggplot(log_beta,aes(x = log)) + geom_density()
 ```
 
 The distribution of log(beta_0 *beta) is normal.
-
 
 ```{r}
 log_beta %>% 
