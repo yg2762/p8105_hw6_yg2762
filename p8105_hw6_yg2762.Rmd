@@ -31,19 +31,24 @@ birthweight =
 
 
 ```{r}
-model_1 = lm(bwt ~ delwt, data = birthweight)
+model_1 = lm(bwt ~ delwt + gaweeks, data = birthweight)
 ```
 
 ```{r}
 model_1_df = birthweight %>% 
-  select(bwt, delwt) %>% 
+  select(bwt, delwt, gaweeks) %>% 
   modelr::add_residuals(model_1) %>% 
   modelr::add_predictions(model_1)
 ```
 
 ```{r}
 model_1_df %>% 
-  ggplot(aes(x=delwt, y=resid)) + geom_violin()
+  ggplot(aes(x = gaweeks, y=resid)) + geom_violin()
+```
+
+```{r}
+model_1_df %>% 
+  ggplot(aes(x = delwt, y=resid)) + geom_violin()
 ```
 
 
@@ -54,9 +59,9 @@ cv_df =
     train = map(train, as_tibble),
     test = map(test, as_tibble)) %>% 
   mutate(
-    model_1 = map(train, ~lm(bwt ~ delwt, data = .x)),
+    model_1 = map(train, ~lm(bwt ~ delwt + gaweeks, data = .x)),
     model_2 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
-    model_3 = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead*blength*babysex, data = .x))) %>% 
+    model_3 = map(train, ~lm(bwt ~ gaweeks + bhead + blength + babysex + bhead*blength*babysex, data = .x))) %>% 
   mutate(
    rmse_model_1 = map2_dbl(model_1, test, ~rmse(model = .x, data = .y)),
    rmse_model_2 = map2_dbl(model_2, test, ~rmse(model = .x, data = .y)),
