@@ -29,6 +29,9 @@ birthweight =
                                              "puerto rican" = "4")) 
 ```
 
+### Propose a regression model for birthweight
+
+Explore whether baby birthweight is associaited with gestational age in weeks and mother’s weight at delivery.
 
 ```{r}
 model_1 = lm(bwt ~ delwt + gaweeks, data = birthweight)
@@ -41,6 +44,7 @@ model_1_df = birthweight %>%
   modelr::add_predictions(model_1)
 ```
 
+### Diagnostics
 ```{r}
 model_1_df %>% 
   ggplot(aes(x = gaweeks, y=resid)) + geom_violin()
@@ -62,6 +66,7 @@ cv_df =
     model_1 = map(train, ~lm(bwt ~ delwt + gaweeks, data = .x)),
     model_2 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
     model_3 = map(train, ~lm(bwt ~ gaweeks + bhead + blength + babysex + bhead*blength*babysex, data = .x))) %>% 
+  # model_3 also include `gaweeks` as an main effect that appear in all three models 
   mutate(
    rmse_model_1 = map2_dbl(model_1, test, ~rmse(model = .x, data = .y)),
    rmse_model_2 = map2_dbl(model_2, test, ~rmse(model = .x, data = .y)),
